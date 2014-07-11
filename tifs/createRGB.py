@@ -26,7 +26,7 @@ def saveRGB(files, outfile, scaleFactor):
     driver.Register()
     datatype = gdal.GDT_Byte
     dest = driver.Create(outfile, files[0].RasterXSize, files[0].RasterYSize,
-                         3, datatype, ["PHOTOMETRIC=RGB", "COMPRESS=DEFLATE"])
+                         4, datatype, ["PHOTOMETRIC=RGB", "ALPHA=YES"])
 
     # Carry over all georeferencing.
     dest.SetGeoTransform(files[0].GetGeoTransform())
@@ -42,6 +42,13 @@ def saveRGB(files, outfile, scaleFactor):
         scaled[scaled > 1] = 1
         band = dest.GetRasterBand(i + 1)
         band.WriteArray(scaled * 255. * scaleFactor)
+
+    # Write alpha channel: 255 if any component nonzero, otherwise 0
+    band = dest.GetRasterBand(4)
+    alpha = sum([tif.ReadAsArray() for tif in files])
+    alpha[alpha > 0] = 255
+    band.WriteArray(alpha)
+
     dest = None
 
 if __name__ == '__main__':
