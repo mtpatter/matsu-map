@@ -1,17 +1,18 @@
 #!/bin/bash
-# gsload - Given a list of GeoTIFFs as arguments, upload them to your GeoServer
+# gsload.sh - Given GeoTIFFs as arguments, upload them to your GeoServer
 #
 # All filenames must match this example's format:
-#           YYYYDDD      INSTRUM ANALYTIC.......
-# EO1A0640452014065110KC_ALI_L1G_CLASSIFIEDCOLOR.tif,
+#
+# EO1A0640452014065110KC_ALI_L1G_CLASSIFIEDCOLOR.tif
+# ??????????YYYYDDD?????_INSTRUM_THEANALYTICNAME.tif
 #
 # Usage:
 # $ gsload [GEOTIFF]...
 # For example,
 # $ gsload mygeotiffs/*.tif
 
-# Be sure to hide the password somehow if you change it from the default!
 username="admin"
+# Be sure to hide the password somehow if you change it from the default!
 password='geoserver'
 
 gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
