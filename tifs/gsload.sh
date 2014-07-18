@@ -36,14 +36,15 @@ for file in "$@"; do
     # set layer=EO1A0640452014065110KC_ALI_L1G_CLASSIFIEDCOLOR,
     # instr=ali_l1g, and analytic=classifiedcolor
     shopt -s nocasematch
-    if [[ ! $name =~ ^([^_]+_([^_]+_[^_]+)_([^_]+))\.tiff?$ ]]; then
+    if [[ ! $name =~ ^(([^_]+)_([^_]+_[^_]+)_([^_]+))\.tiff?$ ]]; then
         echo "Ignoring $name; didn't match *_*_*_*.tif"
         continue
     fi
     shopt -u nocasematch
     layer=${BASH_REMATCH[1]}  # Just drops the file extension.
-    instr=${BASH_REMATCH[2],,}  # E.g., ali_l1g. (The ,, lowercases it.)
-    analytic=${BASH_REMATCH[3],,}  # E.g., classifiedcolor.
+    id=${BASH_REMATCH[2]}  # E.g., EO1A0640452014065110KC.
+    instr=${BASH_REMATCH[3],,}  # E.g., ali_l1g. (The ,, lowercases it.)
+    analytic=${BASH_REMATCH[4],,}  # E.g., classifiedcolor.
 
     yyyy=${name:10:4}
     ddd=${name:14:3}
@@ -56,7 +57,15 @@ for file in "$@"; do
     sudo -u tomcat7 mkdir -p "$location"
     sudo -u tomcat7 rsync "$file" "$location"
 
+    meta=$(echo /glusterfs/osdc_public_data/eo1/$instr/$yyyy/$ddd/meta/daily_* \
+             | sed "s/_l1g/_l0/")
+    description=$(grep ${id:0:3}${id:4} $meta)
     # Upload files.
-    curl -u $username:$password -XPOST -H 'Content-Type: application/xml' -d "<coverageStore><name>$layer</name><workspace>$workspace</workspace><enabled>true</enabled></coverageStore>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores
-    curl -u $username:$password -v -XPUT -H 'Content-type: text/plain' -d "file:$location" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/external.imagemosaic
+    curl -sf -u $username:$password -XPOST -H 'Content-Type: application/xml' -d "<coverageStore><name>$layer</name><workspace>$workspace</workspace><enabled>true</enabled><description>$description</description></coverageStore>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores > /dev/null
+    curlerr=$?
+    curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file:$location" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/external.imagemosaic > /dev/null
+    if [[ $curlerr -eq 0 && $? -eq 0 ]]; then
+        echo "$layer" \
+          | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.txt > /dev/null
+    fi
 done

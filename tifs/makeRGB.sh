@@ -7,6 +7,7 @@
 #
 # Usage:
 # $ ./makeRGB.sh
+# Make sure that you run it in a directory with createRGB.py and gsload.sh
 
 analytic="rgb"  # Name of the analytic; used in output filename and path.
 
@@ -20,7 +21,7 @@ fi
 
 sudo -u tomcat7 mkdir -p $gsdata/$workspace/
 
-for scene in /glusterfs/osdc_public_data/eo1/ali_l1g/2014/{121..198}/*
+for scene in /glusterfs/osdc_public_data/eo1/*_l1g/2014/{121..128}/*
 do
     name=`basename $scene`
 
@@ -40,6 +41,7 @@ do
     location="$gsdata/$workspace/$instr/$analytic/$month/$layer"
     sudo -su tomcat7 mkdir -p "$location"
     sudo -su tomcat7 python createRGB.py $id $location/$layer.tif 2
-    # If you also wish to upload concurrently, you can uncomment this line:
-    # [[ $? -eq 0 ]] && ./gsload.sh $location/$layer.tif
+    if [[ $? -eq 0 ]]; then
+        ./gsload.sh $location/$layer.tif
+    fi
 done
