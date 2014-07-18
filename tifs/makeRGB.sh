@@ -25,7 +25,7 @@ do
     name=`basename $scene`
 
     if [[ ! $name =~ ^([^_]+)_([^_]+_[^_]+)$ ]]; then
-        echo "Ignoring $name; didn't match *_*_*"
+        echo "Ignoring '$name'; name didn't match *_*_*"
         continue
     fi
     id=${BASH_REMATCH[1]}  # E.g., EO1A0640452014065110KC, used by createRGB.py
