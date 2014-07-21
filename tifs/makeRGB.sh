@@ -21,6 +21,7 @@ fi
 
 sudo -u tomcat7 mkdir -p $gsdata/$workspace/
 
+trap "exit" INT
 for scene in /glusterfs/osdc_public_data/eo1/*_l1g/2014/{121..128}/*
 do
     name=`basename $scene`

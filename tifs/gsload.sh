@@ -43,7 +43,7 @@ for file in "$@"; do
     shopt -u nocasematch
     layer=${BASH_REMATCH[1]}  # Just drops the file extension.
     id=${BASH_REMATCH[2]}  # E.g., EO1A0640452014065110KC.
-    instr=${BASH_REMATCH[3],,}  # E.g., ali_l1g. (The ,, lowercases it.)
+    instr=${BASH_REMATCH[3],,}  # E.g., ali_l1g.
     analytic=${BASH_REMATCH[4],,}  # E.g., classifiedcolor.
 
     yyyy=${name:10:4}
@@ -58,14 +58,19 @@ for file in "$@"; do
     sudo -u tomcat7 rsync "$file" "$location"
 
     meta=$(echo /glusterfs/osdc_public_data/eo1/$instr/$yyyy/$ddd/meta/daily_* \
-             | sed "s/_l1g/_l0/")
+             | sed "s/_l1g/_l0/" | sed "s/hyp_l0/hyperion_l0/")
     description=$(grep ${id:0:3}${id:4} $meta)
     # Upload files.
     curl -sf -u $username:$password -XPOST -H 'Content-Type: application/xml' -d "<coverageStore><name>$layer</name><workspace>$workspace</workspace><enabled>true</enabled><description>$description</description></coverageStore>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores > /dev/null
-    curlerr=$?
+    curlerr1=$?
+
     curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file:$location" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/external.imagemosaic > /dev/null
-    if [[ $curlerr -eq 0 && $? -eq 0 ]]; then
-        echo "$layer" \
-          | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.txt > /dev/null
+    curlerr2=$?
+
+    curl -sSf -u admin:geoserver -XPUT -H 'Content-type: application/xml' -d "<coverage><title>$description</title><enabled>true</enabled></coverage>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/coverages/$layer.xml
+
+    if [[ $curlerr1 -eq 0 && $curlerr2 -eq 0 ]]; then
+        echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
+          | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.csv > /dev/null
     fi
 done

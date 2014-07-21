@@ -109,5 +109,5 @@ if __name__ == '__main__':
         files.append(tif)
         usedBands.append(bandNum)
 
-    print "Creating using bands", usedBands
+    print "Creating image from '%s' using bands" % imname, usedBands
     saveRGB(files, outfile, scaleFactor)
