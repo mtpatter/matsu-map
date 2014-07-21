@@ -43,7 +43,7 @@ for file in "$@"; do
     shopt -u nocasematch
     layer=${BASH_REMATCH[1]}  # Just drops the file extension.
     id=${BASH_REMATCH[2]}  # E.g., EO1A0640452014065110KC.
-    instr=${BASH_REMATCH[3],,}  # E.g., ali_l1g.
+    instr=$(${BASH_REMATCH[3],,} | sed "s/hyp/hyperion/")  # E.g., ali_l1g.
     analytic=${BASH_REMATCH[4],,}  # E.g., classifiedcolor.
 
     yyyy=${name:10:4}
@@ -58,7 +58,7 @@ for file in "$@"; do
     sudo -u tomcat7 rsync "$file" "$location"
 
     meta=$(echo /glusterfs/osdc_public_data/eo1/$instr/$yyyy/$ddd/meta/daily_* \
-             | sed "s/_l1g/_l0/" | sed "s/hyp_l0/hyperion_l0/")
+             | sed "s/_l1g/_l0/")
     description=$(grep ${id:0:3}${id:4} $meta)
     # Upload files.
     curl -sf -u $username:$password -XPOST -H 'Content-Type: application/xml' -d "<coverageStore><name>$layer</name><workspace>$workspace</workspace><enabled>true</enabled><description>$description</description></coverageStore>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores > /dev/null
