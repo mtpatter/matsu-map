@@ -67,7 +67,7 @@ for file in "$@"; do
     curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file:$location" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/external.imagemosaic > /dev/null
     curlerr2=$?
 
-    curl -sSf -u admin:geoserver -XPUT -H 'Content-type: application/xml' -d "<coverage><title>$description</title><enabled>true</enabled></coverage>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/coverages/$layer.xml
+    curl -sSf -u $username:$password -XPUT -H 'Content-type: application/xml' -d "<coverage><title>$description</title><enabled>true</enabled></coverage>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/coverages/$layer.xml
 
     if [[ $curlerr1 -eq 0 && $curlerr2 -eq 0 ]]; then
         echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
