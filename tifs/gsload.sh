@@ -43,7 +43,7 @@ for file in "$@"; do
     shopt -u nocasematch
     layer=${BASH_REMATCH[1]}  # Just drops the file extension.
     id=${BASH_REMATCH[2]}  # E.g., EO1A0640452014065110KC.
-    instr=$(${BASH_REMATCH[3],,} | sed "s/hyp/hyperion/")  # E.g., ali_l1g.
+    instr=$(echo ${BASH_REMATCH[3],,} | sed "s/hyp/hyperion/")  # E.g., ali_l1g.
     analytic=${BASH_REMATCH[4],,}  # E.g., classifiedcolor.
 
     yyyy=${name:10:4}
