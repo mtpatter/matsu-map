@@ -22,7 +22,7 @@ fi
 sudo -u tomcat7 mkdir -p $gsdata/$workspace/
 
 trap "exit" INT
-for scene in /glusterfs/osdc_public_data/eo1/*_l1g/2014/{121..128}/*
+for scene in /glusterfs/osdc_public_data/eo1/*_l1g/2014/{122..122}/*
 do
     name=`basename $scene`
 
@@ -31,7 +31,7 @@ do
         continue
     fi
     id=${BASH_REMATCH[1]}  # E.g., EO1A0640452014065110KC, used by createRGB.py
-    instr=${BASH_REMATCH[2],,}  # E.g., ali_l1g. (The ,, lowercases it.)
+    instr=$(echo ${BASH_REMATCH[2],,} | sed "s/hyp/hyperion/")  # E.g., ali_l1g.
 
     yyyy=${name:10:4}
     ddd=${name:14:3}
