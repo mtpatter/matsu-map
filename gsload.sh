@@ -12,8 +12,10 @@
 # $ gsload mygeotiffs/*.tif
 
 username="admin"
-# Be sure to hide the password somehow if you change it from the default!
 password='geoserver'
+# Be sure to hide the password somehow if you change it from the default!
+feeduser="atompost"
+feedpass='********'
 
 gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
 workspace="eo1"
@@ -69,8 +71,10 @@ for file in "$@"; do
 
     curl -sSf -u $username:$password -XPUT -H 'Content-type: application/xml' -d "<coverage><title>$description</title><enabled>true</enabled></coverage>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/coverages/$layer.xml
 
+    # If all went well, post to the Atom feed
     if [[ $curlerr1 -eq 0 && $curlerr2 -eq 0 ]]; then
-        echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
-          | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.csv > /dev/null
+        curl -sSf -u $feeduser:$feedpass -XPOST -H 'Content-Type: application/atom+xml' -d "$(python feedEntry.py "$file")" http://localhost:8080/atomhopper-1.2.25/geoserver/feed
+        # echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
+        #   | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.csv > /dev/null
     fi
 done

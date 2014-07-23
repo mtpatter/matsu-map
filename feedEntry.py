@@ -61,6 +61,7 @@ def makeEntry():
     }
 
     entry = ET.Element("entry")
+    entry.attrib["xmlns"] = "http://www.w3.org/2005/Atom"
 
     # http://www.atomenabled.org/developers/syndication/#requiredEntryElements
     # tag = ET.SubElement(entry, "id")
