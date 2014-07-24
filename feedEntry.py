@@ -7,14 +7,15 @@ image metadata needed to form a GetMap request. The script should also
 work with other geo-referenced image types.
 
 Usage:
-$ python feedEntry.py [image]
+$ python feedEntry.py [-h] image [description]
 Example:
-$ python feedEntry.py /var/lib/tomcat7/webapps/geoserver/data/data/eo1/ali_l1g/rgb/2014-05/EO1A0240362014122110KF_ALI_L1G_RGB/EO1A0240362014122110KF_ALI_L1G_RGB.tif
+$ python feedEntry.py /var/lib/tomcat7/webapps/geoserver/data/data/eo1/ali_l1g/rgb/2014-05/EO1A0240362014122110KF_ALI_L1G_RGB/EO1A0240362014122110KF_ALI_L1G_RGB.tif "This is a description."
 """
 
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 from osgeo import gdal, osr
+import argparse
 import sys
 import os
 
@@ -27,14 +28,10 @@ def prettify(xmlString):
     """Return XML string with proper whitespace."""
     return xml.dom.minidom.parseString(xmlString).toprettyxml()
 
-def makeEntry():
+def makeEntry(image, description=""):
     """Print an Atom feed entry based on the supplied georeferenced file."""
 
-    if len(sys.argv) != 2:
-        print "USAGE: python %s [image]" % sys.argv[0]
-        exit(2)
-
-    image = gdal.Open(sys.argv[1])
+    image = gdal.Open(image)
 
     # Identify the srs EPSG number
     srs = osr.SpatialReference()
@@ -74,9 +71,18 @@ def makeEntry():
                       "width", "height", "format"]:
         child = ET.SubElement(entry, parameter)
         child.text = data[parameter]
+    if description:
+        child = ET.SubElement(entry, "description")
+        child.text = description
 
     # print prettify(ET.tostring(entry))
     print ET.tostring(entry)
 
-if __name__ == '__main__':
-    makeEntry()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Create a GeoTIFF Atom feed "
+                                     "entry with everything needed for GetMap.")
+    parser.add_argument("image", type=str, help="Input image file.")
+    parser.add_argument("description", nargs="?", default="", const="",
+                        type=str, help="Optional description tag.") 
+    args = parser.parse_args()
+    makeEntry(args.image, args.description)
