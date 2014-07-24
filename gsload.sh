@@ -12,10 +12,9 @@
 # $ gsload mygeotiffs/*.tif
 
 username="admin"
-password='geoserver'
-# Be sure to hide the password somehow if you change it from the default!
+password='geoserver'  # If you change it from the default, be sure to hide it!
 feeduser="atompost"
-feedpass='********'
+feedpass='********'  # Feed password hidden since this is on GitHub.
 
 gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
 workspace="eo1"
