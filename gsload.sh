@@ -72,7 +72,7 @@ for file in "$@"; do
 
     # If all went well, post to the Atom feed
     if [[ $curlerr1 -eq 0 && $curlerr2 -eq 0 ]]; then
-        curl -sSf -u $feeduser:$feedpass -XPOST -H 'Content-Type: application/atom+xml' -d "$(python feedEntry.py "$file")" http://localhost:8080/atomhopper-1.2.25/geoserver/feed
+        curl -sSf -u $feeduser:$feedpass -XPOST -H 'Content-Type: application/atom+xml' -d "$(python feedEntry.py "$file")" http://localhost:8080/atomhopper-1.2.25/geoserver/feed.xml
         # echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
         #   | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.csv > /dev/null
     fi
