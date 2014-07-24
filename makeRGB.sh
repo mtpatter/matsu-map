@@ -41,7 +41,7 @@ do
     layer=${name}_${analytic^^}  # The ^^ converts to uppercase.
     location="$gsdata/$workspace/$instr/$analytic/$month/$layer"
     sudo -su tomcat7 mkdir -p "$location"
-    sudo -su tomcat7 python createRGB.py $id $location/$layer.tif 2
+    sudo -su tomcat7 python createRGB.py $id $location/$layer.tif 1
     if [[ $? -eq 0 ]]; then
         ./gsload.sh $location/$layer.tif
     fi
