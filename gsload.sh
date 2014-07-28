@@ -11,27 +11,31 @@
 # For example,
 # $ gsload mygeotiffs/*.tif
 
-username="admin"
-password='geoserver'  # If you change it from the default, be sure to hide it!
-feeduser="atompost"
-feedpass='********'  # Feed password hidden since this is on GitHub.
-
 gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
 workspace="eo1"
+
+# Import credentials from config.sh
+if [[ ! -f ${BASH_SOURCE%/*}/config.sh ]]; then
+    echo "ERROR: Could not find config.sh! Try 'mv sample-config.sh config.sh'"
+    exit 1
+fi
+source ${BASH_SOURCE%/*}/config.sh
 
 if [ ! -d $gsdata ]; then
     echo "Error: GeoServer data directory '$gsdata' not found."
     exit 1
 fi
 
+# If workspace doesn't exist, create it.
 sudo -u tomcat7 mkdir -p $gsdata/$workspace/
+curl -sf -u $username:$password -XPOST -H "Content-type: text/xml" -d "<workspace><name>$workspace</name></workspace>" http://localhost:8080/geoserver/rest/workspaces
 
 for file in "$@"; do
     if [[ ! -f "$file" ]]; then
         continue
     fi
 
-    name=`basename "$file"`
+    name=$(basename "$file")
 
     # Given EO1A0640452014065110KC_ALI_L1G_CLASSIFIEDCOLOR.tif,
     # set layer=EO1A0640452014065110KC_ALI_L1G_CLASSIFIEDCOLOR,
@@ -50,35 +54,46 @@ for file in "$@"; do
     yyyy=${name:10:4}
     ddd=${name:14:3}
     # Trick from http://superuser.com/a/232106
-    month=`date -d "$yyyy-01-01 +$ddd days -1 day" "+%Y-%m"`
+    month=$(date -d "$yyyy-01-01 +$ddd days -1 day" "+%Y-%m")
 
     location="$gsdata/$workspace/$instr/$analytic/$month/$layer/"
 
-    # Move files (if they aren't already in place).
-    sudo -u tomcat7 mkdir -p "$location"
-    sudo -u tomcat7 rsync "$file" "$location"
+    # Move the image and reproject it.
+    sudo -u tomcat7 mkdir -p "${location}"
+    sudo -u tomcat7 rsync "$file" "$location/$layer.badprojection" 
+    sudo -u tomcat7 rm -f "$location/$layer.tif"
+    sudo -u tomcat7 gdalwarp -t_srs EPSG:4326 "$location/$layer.badprojection" "$location/$layer.tif"
+    sudo -u tomcat7 rm "$location/$layer.badprojection"
+
+    # This was a failed attempt at only copying and reprojecting if changed.
+    #if [[ $(sudo -u tomcat7 rsync -ci "$file" "$location/$layer.badprojection" | wc -l) -ne 0 ]]; then
+        # My version of gdalwarp lacks -overwrite, so rm instead...
+        #sudo -u tomcat7 rm "$location/$layer.tif"
+        #sudo -u tomcat7 gdalwarp -t_srs EPSG:4326 "$location/$layer.badprojection" "$location/$layer.tif"
+    #fi
 
     meta=$(echo /glusterfs/osdc_public_data/eo1/$instr/$yyyy/$ddd/meta/daily_* \
              | sed "s/_l1g/_l0/")
     description=$(grep ${id:0:3}${id:4} $meta)
 
     # Upload files.
-    curl -sf -u $username:$password -XPOST -H 'Content-Type: application/xml' -d "<coverageStore><name>$layer</name><workspace>$workspace</workspace><enabled>true</enabled><description>$description</description></coverageStore>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores > /dev/null
-    curlerr1=$?
-
     curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file:$location" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/external.imagemosaic > /dev/null
-    curlerr2=$?
 
-    curl -sSf -u $username:$password -XPUT -H 'Content-type: application/xml' -d "<coverage><title>$description</title><defaultStyle><name>$style</name></defaultStyle><enabled>true</enabled></coverage>" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/$layer/coverages/$layer.xml
+    # If all went well, post to the Atom feed
+    if [[ $? -eq 0 ]]; then
+        curl -sSf -u $feeduser:$feedpass -XPOST -H 'Content-Type: application/atom+xml' -d "$(python feedEntry.py "$file" "$description")" http://localhost:8080/atomhopper-1.2.25/geoserver/feed.xml
+    fi
 
+    # If it's a classified image, set its style so that it will be colored.
     if [[ $analytic == "classified" ]]; then
         curl -sSf -u $username:$password -XPUT -H 'Content-type: text/xml' -d '<layer><defaultStyle><name>classified</name></defaultStyle></layer>' http://localhost:8080/geoserver/rest/layers/$workspace:$layer
     fi
-
-    # If all went well, post to the Atom feed
-    if [[ $curlerr1 -eq 0 && $curlerr2 -eq 0 ]]; then
-        curl -sSf -u $feeduser:$feedpass -XPOST -H 'Content-Type: application/atom+xml' -d "$(python feedEntry.py "$file" "$description")" http://localhost:8080/atomhopper-1.2.25/geoserver/feed.xml
-        # echo "$workspace,$layer,$(date --iso-8601=seconds --utc)" \
-        #   | sudo -su tomcat7 tee -a $gsdata/$workspace/loaded.csv > /dev/null
-    fi
 done
+
+# Rebuild ImageMosaic of all images from this instrument and analytic.
+sudo -u tomcat7 rm -f $gsdata/$workspace/$instr/$analytic/$analytic.shp
+curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file:$gsdata/$workspace/$instr/$analytic" http://localhost:8080/geoserver/rest/workspaces/$workspace/coveragestores/${instr}_${analytic}/external.imagemosaic?coverageName=${instr}_${analytic}&recalculate=nativebbox,latlonbbox > /dev/null
+
+if [[ $analytic == "classified" ]]; then
+    curl -sSf -u $username:$password -XPUT -H 'Content-type: text/xml' -d '<layer><defaultStyle><name>classified</name></defaultStyle></layer>' http://localhost:8080/geoserver/rest/layers/$workspace:${instr}_${analytic}
+fi
