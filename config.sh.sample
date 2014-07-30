@@ -1,6 +1,9 @@
 #!/bin/bash
 # config.sh - Store your username and password here, where it is gitignored.
 
+# Target workspace for gsload.sh
+workspace="eo1"
+
 # GeoServer credentials
 username="admin"
 password='geoserver'

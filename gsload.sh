@@ -12,7 +12,6 @@
 # $ gsload mygeotiffs/*.tif
 
 gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
-workspace="eo1"
 
 # Import credentials from config.sh
 if [[ ! -f ${BASH_SOURCE%/*}/config.sh ]]; then
@@ -98,4 +97,4 @@ curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file://
 
 curl -sSf -u $username:$password -XPUT -H 'Content-type: text/xml' -d "<layer><defaultStyle><name>$analytic</name></defaultStyle></layer>" http://localhost:8080/geoserver/rest/layers/$workspace:${instr}_${analytic} > /dev/null
 
-curl -sSf -u $username:$password -XPUT -H "Content-type: text/plain" -d "file://$gsdata/$workspace/$instr/$analytic/$analytic.shp" http://localhost:8080/geoserver/rest/workspaces/eo1/datastores/ali_l1g_rgb_vector/external.shp > /dev/null
+curl -sSf -u $username:$password -XPUT -H "Content-type: text/plain" -d "file://$gsdata/$workspace/$instr/$analytic/$analytic.shp" http://localhost:8080/geoserver/rest/workspaces/$workspace/datastores/${instr}_${analytic}_vector/external.shp > /dev/null
