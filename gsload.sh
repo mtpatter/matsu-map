@@ -98,10 +98,10 @@ curl -sSf -u $username:$password -XPUT -H 'Content-type: text/plain' -d "file://
 curl -sSf -u $username:$password -XPUT -H 'Content-type: text/xml' -d "<layer><defaultStyle><name>$analytic</name></defaultStyle></layer>" http://localhost:8080/geoserver/rest/layers/$workspace:${instr}_${analytic}_raster > /dev/null
 
 # Build vector data from ImageMosaic shapefile
-curl -v -u "${username}:${password}" -XPUT -H "Content-type: text/plain" -d "file://${gsdata}/${workspace}/${instr}/${instr}_${analytic}/${instr}_${analytic}.shp" "http://localhost:8080/geoserver/rest/workspaces/${workspace}/datastores/${instr}_${analytic}/external.shp" #> /dev/null
+curl -sSf -u "${username}:${password}" -XPUT -H "Content-type: text/plain" -d "file://${gsdata}/${workspace}/${instr}/${instr}_${analytic}/${instr}_${analytic}.shp" "http://localhost:8080/geoserver/rest/workspaces/${workspace}/datastores/${instr}_${analytic}/external.shp" #> /dev/null
 
 # We have to recalculate the bbox because of this:  https://github.com/geoserver/geoserver/blob/2.5.x/src/restconfig/src/main/java/org/geoserver/catalog/rest/DataStoreFileResource.java#L411
-#curl -sSf -u "${username}:${password}" -XPUT -H "Content-type: application/xml" -d "<featureType><name>${instr}_${analytic}</name><enabled>true</enabled></featureType>" "http://localhost:8080/geoserver/rest/workspaces/${workspace}/datastores/${instr}_${analytic}/featuretypes/${instr}_${analytic}.xml&recalculate=nativebbox,latlonbbox" > /dev/null
+curl -sSf -u "${username}:${password}" -XPUT -H "Content-type: application/xml" -d "<featureType><name>${instr}_${analytic}</name><enabled>true</enabled></featureType>" "http://localhost:8080/geoserver/rest/workspaces/${workspace}/datastores/${instr}_${analytic}/featuretypes/${instr}_${analytic}.xml&recalculate=nativebbox,latlonbbox" > /dev/null
 
 #curl -v -u $username:$password -XPOST -H "Content-type: application/xml" -d @featuretype.xml "http://localhost:8080/geoserver/rest/workspaces/$workspace/datastores/${instr}_${analytic}_vector/featuretypes.shp&recalculate=nativebbox,latlonbbox" #> /dev/null
 #<title>Vector data</title><enabled>true</enabled>
