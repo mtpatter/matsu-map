@@ -15,7 +15,7 @@ gsdata="/var/lib/tomcat7/webapps/geoserver/data/data"
 
 # Import credentials from config.sh
 if [[ ! -f ${BASH_SOURCE%/*}/config.sh ]]; then
-    echo "ERROR: Could not find config.sh! Try 'mv config.sh.sample config.sh'"
+    echo "ERROR: Could not find config.sh! Try 'cp config.sh.sample config.sh'"
     exit 1
 fi
 source ${BASH_SOURCE%/*}/config.sh
