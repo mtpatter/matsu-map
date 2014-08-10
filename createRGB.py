@@ -60,10 +60,13 @@ if __name__ == '__main__':
                         help='Output GeoTIFF file name.')
     parser.add_argument('scale', nargs='?', const=1, type=float, default=1,
                         help='Scale factor to brighten image. (Default = 1)')
+    parser.add_argument('outdir', nargs='?', const='', type=str, default='',
+                        help='Alternative directory to look for images.')
     options = parser.parse_args()
     imname = options.imname
     outfile = options.outfile
     scaleFactor = options.scale
+    outdir = options.outdir
 
     basedir = '/glusterfs/osdc_public_data/eo1'
     YYYY = imname[10:14]
@@ -78,7 +81,8 @@ if __name__ == '__main__':
         instrdir = 'hyperion_l1g'
         suffix = '_HYP_L1G'
         digits = '%03d'
-    basefile = '/'.join([basedir, instrdir, YYYY, DDD, imname + suffix, imname])
+    base = (outdir or '/'.join([basedir,instrdir,YYYY,DDD,imname+suffix])) + \
+           '/' + imname
 
     # Decide on a list of acceptable bands to use for each of R, G, and B.
     # The band numbers will be tried in order.
@@ -100,7 +104,7 @@ if __name__ == '__main__':
     for i, color in enumerate(bands):
         # Try each acceptable color until success, else error.
         for bandNum in color:
-            tif = gdal.Open(basefile + '_B' + digits % bandNum + '_L1T.TIF')
+            tif = gdal.Open(base + '_B' + digits % bandNum + '_L1T.TIF')
             if tif is not None: break
         else:
             print "ERROR: No viable band found for %s component." % "RGB"[i]
